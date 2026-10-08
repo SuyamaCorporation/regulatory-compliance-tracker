@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regulatory Compliance Tracker</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-blue-50 min-h-screen">
+<div class="max-w-6xl mx-auto p-4">
+  <header class="text-center py-6">
+    <h1 class="text-3xl font-bold text-blue-900">📋 Regulatory Compliance Tracker</h1>
+    <p class="text-blue-700 mt-1">HIPAA • GDPR • SOX • FDA • ISO 27001 — Track audits, documents & remediation tasks</p>
+  </header>
+
+  <!-- Framework Selector -->
+  <div class="bg-white rounded-2xl shadow p-4 mb-6 border border-blue-200">
+    <div class="flex flex-wrap gap-2 items-center">
+      <span class="text-sm font-semibold text-gray-700 mr-2">Framework:</span>
+      <button onclick="setFramework('HIPAA')" id="btn-HIPAA" class="px-4 py-1.5 rounded-full text-sm font-medium border transition">HIPAA</button>
+      <button onclick="setFramework('GDPR')" id="btn-GDPR" class="px-4 py-1.5 rounded-full text-sm font-medium border transition">GDPR</button>
+      <button onclick="setFramework('SOX')" id="btn-SOX" class="px-4 py-1.5 rounded-full text-sm font-medium border transition">SOX</button>
+      <button onclick="setFramework('FDA')" id="btn-FDA" class="px-4 py-1.5 rounded-full text-sm font-medium border transition">FDA 21 CFR</button>
+      <button onclick="setFramework('ISO27001')" id="btn-ISO27001" class="px-4 py-1.5 rounded-full text-sm font-medium border transition">ISO 27001</button>
+      <button onclick="setFramework('custom')" id="btn-custom" class="px-4 py-1.5 rounded-full text-sm font-medium border transition">Custom</button>
+      <button onclick="showAddItem()" class="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-full text-sm font-medium transition">+ Add Item</button>
+    </div>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div id="stat-total" class="bg-white rounded-xl p-4 shadow text-center border border-gray-200">
+      <p class="text-2xl font-bold text-gray-800" id="cnt-total">0</p>
+      <p class="text-xs text-gray-500">Total Items</p>
+    </div>
+    <div class="bg-white rounded-xl p-4 shadow text-center border border-green-200">
+      <p class="text-2xl font-bold text-green-600" id="cnt-compliant">0</p>
+      <p class="text-xs text-gray-500">Compliant</p>
+    </div>
+    <div class="bg-white rounded-xl p-4 shadow text-center border border-yellow-200">
+      <p class="text-2xl font-bold text-yellow-600" id="cnt-review">0</p>
+      <p class="text-xs text-gray-500">Due for Review</p>
+    </div>
+    <div class="bg-white rounded-xl p-4 shadow text-center border border-red-200">
+      <p class="text-2xl font-bold text-red-600" id="cnt-overdue">0</p>
+      <p class="text-xs text-gray-500">Overdue / Non-Compliant</p>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Compliance Checklist -->
+    <div class="lg:col-span-2">
+      <div class="bg-white rounded-2xl shadow border border-blue-100">
+        <div class="p-4 border-b border-gray-100 flex items-center gap-3">
+          <h2 class="font-semibold text-blue-800">Compliance Items</h2>
+          <input id="searchItems" type="text" placeholder="Search..." oninput="renderItems()" class="ml-auto border border-gray-300 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 w-40">
+        </div>
+        <div id="complianceItems" class="divide-y divide-gray-50 max-h-[60vh] overflow-y-auto"></div>
+      </div>
+    </div>
+
+    <!-- Tasks & Upcoming -->
+    <div class="space-y-4">
+      <div class="bg-white rounded-2xl shadow p-4 border border-orange-100">
+        <h2 class="font-semibold text-orange-700 mb-3">⚠️ Upcoming Deadlines</h2>
+        <div id="upcomingList" class="space-y-2 text-sm"></div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow p-4 border border-purple-100">
+        <h2 class="font-semibold text-purple-700 mb-3">📝 Remediation Tasks</h2>
+        <div class="mb-3">
+          <input id="taskText" type="text" placeholder="Add remediation task..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
+          <div class="grid grid-cols-2 gap-2 mt-2">
+            <input id="taskDue" type="date" class="border border-gray-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-purple-400">
+            <select id="taskPriority" class="border border-gray-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-purple-400">
+              <option value="high">High Priority</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <button onclick="addTask()" class="mt-2 w-full bg-purple-600 hover:bg-purple-700 text-white text-sm py-1.5 rounded-lg">+ Add Task</button>
+        </div>
+        <div id="taskList" class="space-y-2 max-h-64 overflow-y-auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Item Modal -->
+  <div id="addModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg">
+      <h3 class="text-lg font-semibold text-blue-800 mb-4">Add Compliance Item</h3>
+      <div class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-gray-600">Framework</label>
+            <select id="newFramework" class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              <option>HIPAA</option><option>GDPR</option><option>SOX</option><option>FDA</option><option>ISO27001</option><option>custom</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-600">Category</label>
+            <input id="newCategory" type="text" placeholder="e.g. Data Privacy" class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-gray-600">Requirement Title</label>
+          <input id="newTitle" type="text" placeholder="e.g. Encrypt PHI at rest" class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="text-xs text-gray-600">Reference / Clause</label>
+          <input id="newRef" type="text" placeholder="e.g. §164.312(a)(2)(iv)" class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="text-xs text-gray-600">Status</label>
+            <select id="newStatus" class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              <option value="compliant">Compliant</option>
+              <option value="in_progress">In Progress</option>
+              <option value="non_compliant">Non-Compliant</option>
+              <option value="not_applicable">N/A</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-600">Last Audit</label>
+            <input id="newLastAudit" type="date" class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="text-xs text-gray-600">Next Review</label>
+            <input id="newNextReview" type="date" class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-gray-600">Document Version</label>
+          <input id="newDocVersion" type="text" placeholder="e.g. v2.3 — 2026-08-15" class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="text-xs text-gray-600">Notes</label>
+          <textarea id="newNotes" rows="2" class="w-full mt-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"></textarea>
+        </div>
+      </div>
+      <div class="flex gap-3 mt-4">
+        <button onclick="saveNewItem()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg">Save</button>
+        <button onclick="hideAddItem()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 rounded-lg">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const FRAMEWORK_ITEMS = {
+  HIPAA: [
+    {category:'Access Control',title:'Unique user identification',ref:'§164.312(a)(2)(i)',status:'compliant'},
+    {category:'Access Control',title:'Emergency access procedure',ref:'§164.312(a)(2)(ii)',status:'compliant'},
+    {category:'Access Control',title:'Automatic logoff',ref:'§164.312(a)(2)(iii)',status:'in_progress'},
+    {category:'Encryption',title:'Encrypt PHI at rest',ref:'§164.312(a)(2)(iv)',status:'non_compliant'},
+    {category:'Encryption',title:'Encrypt PHI in transit',ref:'§164.312(e)(2)(ii)',status:'compliant'},
+    {category:'Audit Controls',title:'Audit log mechanism',ref:'§164.312(b)',status:'compliant'},
+    {category:'Integrity',title:'PHI integrity controls',ref:'§164.312(c)(1)',status:'in_progress'},
+    {category:'Training',title:'Workforce security training',ref:'§164.308(a)(5)',status:'non_compliant'},
+  ],
+  GDPR: [
+    {category:'Data Processing',title:'Lawful basis for processing',ref:'Art. 6',status:'compliant'},
+    {category:'Data Processing',title:'Data minimization',ref:'Art. 5(1)(c)',status:'in_progress'},
+    {category:'Consent',title:'Explicit consent records',ref:'Art. 7',status:'compliant'},
+    {category:'Rights',title:'Right to erasure process',ref:'Art. 17',status:'non_compliant'},
+    {category:'Rights',title:'Data portability mechanism',ref:'Art. 20',status:'in_progress'},
+    {category:'Security',title:'DPIA for high-risk processing',ref:'Art. 35',status:'compliant'},
+    {category:'Breach',title:'72-hour breach notification',ref:'Art. 33',status:'compliant'},
+    {category:'DPO',title:'Data Protection Officer appointed',ref:'Art. 37',status:'not_applicable'},
+  ],
+  SOX: [
+    {category:'Financial Reporting',title:'Internal control assessment',ref:'Section 302',status:'compliant'},
+    {category:'Financial Reporting',title:'CEO/CFO certification',ref:'Section 302',status:'compliant'},
+    {category:'IT Controls',title:'Change management controls',ref:'Section 404',status:'in_progress'},
+    {category:'IT Controls',title:'Access control review',ref:'Section 404',status:'compliant'},
+    {category:'Audit',title:'External auditor independence',ref:'Section 201',status:'compliant'},
+    {category:'Whistleblower',title:'Whistleblower protection program',ref:'Section 806',status:'in_progress'},
+  ],
+  FDA: [
+    {category:'21 CFR Part 11',title:'Electronic records controls',ref:'§11.10',status:'compliant'},
+    {category:'21 CFR Part 11',title:'Electronic signatures',ref:'§11.100',status:'in_progress'},
+    {category:'Quality System',title:'Design controls documented',ref:'§820.30',status:'compliant'},
+    {category:'Quality System',title:'CAPA procedure',ref:'§820.100',status:'non_compliant'},
+    {category:'Quality System',title:'Device History Records',ref:'§820.184',status:'compliant'},
+    {category:'Labeling',title:'Device labeling review',ref:'§801',status:'compliant'},
+  ],
+  ISO27001: [
+    {category:'A.5 Policies',title:'Information security policies',ref:'A.5.1.1',status:'compliant'},
+    {category:'A.6 Organization',title:'Segregation of duties',ref:'A.6.1.2',status:'compliant'},
+    {category:'A.8 Asset Management',title:'Asset inventory',ref:'A.8.1.1',status:'in_progress'},
+    {category:'A.9 Access',title:'Access control policy',ref:'A.9.1.1',status:'compliant'},
+    {category:'A.10 Cryptography',title:'Cryptography policy',ref:'A.10.1.1',status:'non_compliant'},
+    {category:'A.12 Operations',title:'Malware controls',ref:'A.12.2.1',status:'compliant'},
+    {category:'A.16 Incident',title:'Incident response procedure',ref:'A.16.1.5',status:'in_progress'},
+    {category:'A.18 Compliance',title:'Compliance reviews',ref:'A.18.2.1',status:'compliant'},
+  ],
+};
+
+let currentFramework = 'HIPAA';
+let items = JSON.parse(localStorage.getItem('compliance_items') || 'null');
+let tasks = JSON.parse(localStorage.getItem('compliance_tasks') || '[]');
+
+if (!items) {
+  items = {};
+  Object.entries(FRAMEWORK_ITEMS).forEach(([fw, fwItems]) => {
+    items[fw] = fwItems.map((i, idx) => ({
+      id: `${fw}-${idx}`,
+      framework: fw,
+      ...i,
+      lastAudit: '',
+      nextReview: '',
+      docVersion: '',
+      notes: ''
+    }));
+  });
+  items.custom = [];
+}
+
+function save() {
+  localStorage.setItem('compliance_items', JSON.stringify(items));
+  localStorage.setItem('compliance_tasks', JSON.stringify(tasks));
+}
+
+function setFramework(fw) {
+  currentFramework = fw;
+  document.querySelectorAll('[id^="btn-"]').forEach(b => {
+    b.className = 'px-4 py-1.5 rounded-full text-sm font-medium border transition';
+    if (b.id === `btn-${fw}`) {
+      b.className += ' bg-blue-600 text-white border-blue-600';
+    } else {
+      b.className += ' bg-white text-gray-600 border-gray-300 hover:border-blue-400';
+    }
+  });
+  renderItems();
+  renderStats();
+}
+
+function getFilteredItems() {
+  const search = document.getElementById('searchItems')?.value.toLowerCase() || '';
+  const fwItems = items[currentFramework] || [];
+  return search ? fwItems.filter(i => i.title.toLowerCase().includes(search) || i.category.toLowerCase().includes(search)) : fwItems;
+}
+
+const STATUS_CONFIG = {
+  compliant:      { label: '✓ Compliant', bg: 'bg-green-100', text: 'text-green-800', dot: 'bg-green-500' },
+  in_progress:    { label: '⏳ In Progress', bg: 'bg-yellow-100', text: 'text-yellow-800', dot: 'bg-yellow-500' },
+  non_compliant:  { label: '✗ Non-Compliant', bg: 'bg-red-100', text: 'text-red-800', dot: 'bg-red-500' },
+  not_applicable: { label: '— N/A', bg: 'bg-gray-100', text: 'text-gray-500', dot: 'bg-gray-400' }
+};
+
+function renderItems() {
+  const filtered = getFilteredItems();
+  const container = document.getElementById('complianceItems');
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<p class="p-4 text-gray-400 text-sm italic">No items found</p>';
+    return;
+  }
+
+  // Group by category
+  const groups = {};
+  filtered.forEach(item => {
+    if (!groups[item.category]) groups[item.category] = [];
+    groups[item.category].push(item);
+  });
+
+  container.innerHTML = Object.entries(groups).map(([cat, catItems]) => `
+    <div>
+      <div class="px-4 py-2 bg-blue-50 text-xs font-bold text-blue-700 uppercase tracking-wide">${cat}</div>
+      ${catItems.map(item => {
+        const sc = STATUS_CONFIG[item.status] || STATUS_CONFIG.in_progress;
+        const isOverdue = item.nextReview && new Date(item.nextReview) < new Date();
+        return `<div class="px-4 py-3 hover:bg-gray-50 transition">
+          <div class="flex items-start gap-3">
+            <div class="flex-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-medium text-gray-800 text-sm">${item.title}</span>
+                <span class="text-xs text-gray-400">${item.ref}</span>
+                ${isOverdue ? '<span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Overdue Review</span>' : ''}
+              </div>
+              <div class="flex flex-wrap gap-3 mt-1 text-xs text-gray-500">
+                ${item.lastAudit ? `<span>Last audit: ${item.lastAudit}</span>` : ''}
+                ${item.nextReview ? `<span>Next: ${item.nextReview}</span>` : ''}
+                ${item.docVersion ? `<span>Doc: ${item.docVersion}</span>` : ''}
+              </div>
+              ${item.notes ? `<p class="text-xs text-gray-400 mt-1 italic">${item.notes}</p>` : ''}
+            </div>
+            <select onchange="updateStatus('${item.framework}','${item.id}',this.value)" class="text-xs border border-gray-300 rounded-lg px-2 py-1 ${sc.bg} ${sc.text} focus:outline-none shrink-0">
+              <option value="compliant" ${item.status==='compliant'?'selected':''}>✓ Compliant</option>
+              <option value="in_progress" ${item.status==='in_progress'?'selected':''}>⏳ In Progress</option>
+              <option value="non_compliant" ${item.status==='non_compliant'?'selected':''}>✗ Non-Compliant</option>
+              <option value="not_applicable" ${item.status==='not_applicable'?'selected':''}>— N/A</option>
+            </select>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+function updateStatus(framework, id, newStatus) {
+  const item = (items[framework] || []).find(i => i.id === id);
+  if (item) { item.status = newStatus; save(); renderStats(); renderUpcoming(); }
+}
+
+function renderStats() {
+  const allItems = Object.values(items).flat();
+  const total = allItems.length;
+  const compliant = allItems.filter(i => i.status === 'compliant').length;
+  const today = new Date().toISOString().split('T')[0];
+  const upcoming = allItems.filter(i => i.nextReview && i.nextReview <= new Date(Date.now() + 30*86400000).toISOString().split('T')[0] && i.nextReview >= today).length;
+  const overdue = allItems.filter(i => i.status === 'non_compliant' || (i.nextReview && i.nextReview < today)).length;
+  document.getElementById('cnt-total').textContent = total;
+  document.getElementById('cnt-compliant').textContent = compliant;
+  document.getElementById('cnt-review').textContent = upcoming;
+  document.getElementById('cnt-overdue').textContent = overdue;
+}
+
+function renderUpcoming() {
+  const today = new Date();
+  const soon = new Date(today.getTime() + 60 * 86400000);
+  const allItems = Object.values(items).flat();
+  const upcoming = allItems
+    .filter(i => i.nextReview && new Date(i.nextReview) <= soon)
+    .sort((a,b) => a.nextReview.localeCompare(b.nextReview))
+    .slice(0, 8);
+
+  const container = document.getElementById('upcomingList');
+  if (upcoming.length === 0) {
+    container.innerHTML = '<p class="text-gray-400 text-xs italic">No upcoming reviews in 60 days</p>';
+    return;
+  }
+  container.innerHTML = upcoming.map(i => {
+    const daysLeft = Math.round((new Date(i.nextReview) - today) / 86400000);
+    const isLate = daysLeft < 0;
+    return `<div class="flex items-center justify-between text-xs border-l-2 ${isLate ? 'border-red-400 bg-red-50' : 'border-orange-400 bg-orange-50'} rounded-r-lg px-2 py-1">
+      <div>
+        <p class="font-medium text-gray-700">${i.title}</p>
+        <p class="text-gray-500">${i.framework} · ${i.nextReview}</p>
+      </div>
+      <span class="${isLate ? 'text-red-600' : 'text-orange-600'} font-bold">${isLate ? `${Math.abs(daysLeft)}d late` : `${daysLeft}d`}</span>
+    </div>`;
+  }).join('');
+}
+
+function addTask() {
+  const text = document.getElementById('taskText').value.trim();
+  if (!text) return;
+  tasks.push({
+    id: Date.now().toString(),
+    text,
+    due: document.getElementById('taskDue').value,
+    priority: document.getElementById('taskPriority').value,
+    done: false
+  });
+  save(); renderTasks();
+  document.getElementById('taskText').value = '';
+}
+
+function renderTasks() {
+  const PRIORITY = { high: 'bg-red-100 text-red-700', medium: 'bg-yellow-100 text-yellow-700', low: 'bg-gray-100 text-gray-600' };
+  const container = document.getElementById('taskList');
+  if (tasks.length === 0) { container.innerHTML = '<p class="text-gray-400 text-xs italic">No tasks yet</p>'; return; }
+  container.innerHTML = tasks.filter(t => !t.done).concat(tasks.filter(t => t.done)).map(task => `
+    <div class="flex items-center gap-2 text-xs ${task.done ? 'opacity-40' : ''}">
+      <input type="checkbox" ${task.done ? 'checked' : ''} onchange="toggleTask('${task.id}')" class="shrink-0 accent-purple-600">
+      <div class="flex-1 min-w-0">
+        <p class="${task.done ? 'line-through text-gray-400' : 'text-gray-700'} truncate">${task.text}</p>
+        ${task.due ? `<p class="text-gray-400">${task.due}</p>` : ''}
+      </div>
+      <span class="text-xs px-1.5 py-0.5 rounded-full ${PRIORITY[task.priority]} shrink-0">${task.priority}</span>
+      <button onclick="deleteTask('${task.id}')" class="text-gray-300 hover:text-red-400">✕</button>
+    </div>`).join('');
+}
+
+function toggleTask(id) {
+  const task = tasks.find(t => t.id === id);
+  if (task) { task.done = !task.done; save(); renderTasks(); }
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  save(); renderTasks();
+}
+
+function showAddItem() { document.getElementById('addModal').classList.remove('hidden'); }
+function hideAddItem() { document.getElementById('addModal').classList.add('hidden'); }
+
+function saveNewItem() {
+  const fw = document.getElementById('newFramework').value;
+  const title = document.getElementById('newTitle').value.trim();
+  if (!title) { alert('Title required'); return; }
+  if (!items[fw]) items[fw] = [];
+  items[fw].push({
+    id: `${fw}-${Date.now()}`,
+    framework: fw,
+    category: document.getElementById('newCategory').value.trim() || 'General',
+    title,
+    ref: document.getElementById('newRef').value.trim(),
+    status: document.getElementById('newStatus').value,
+    lastAudit: document.getElementById('newLastAudit').value,
+    nextReview: document.getElementById('newNextReview').value,
+    docVersion: document.getElementById('newDocVersion').value.trim(),
+    notes: document.getElementById('newNotes').value.trim()
+  });
+  save(); hideAddItem();
+  if (fw === currentFramework) renderItems();
+  renderStats(); renderUpcoming();
+}
+
+document.getElementById('taskDue').value = new Date(Date.now() + 14*86400000).toISOString().split('T')[0];
+
+setFramework('HIPAA');
+renderStats();
+renderUpcoming();
+renderTasks();
+</script>
+</body>
+</html>
